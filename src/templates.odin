@@ -15,7 +15,8 @@ Template_Entry :: struct {
 }
 
 Template_Directory_Data :: struct {
-	data: [dynamic]^Template_Entry,
+	data:          [dynamic]^Template_Entry,
+	override_name: string,
 }
 
 Get_Template_From_Valid_Name :: proc(n: string, t: ^Template_Directory_Data) -> ^Template_Entry {
@@ -82,22 +83,24 @@ Template_Copy :: proc(
 	entry := Get_Template_From_Valid_Name(name, templates)
 	if entry.type == .FILE {
 
-		p, perr := os.join_path([]string{paths.cwd, entry.name}, context.allocator)
+		epath: string = templates.override_name != "" ? templates.override_name : entry.name
+		p, perr := os.join_path([]string{paths.cwd, epath}, context.allocator)
 		if perr != nil do fmt.panicf("Could not allocate template destination string: %s", p)
 
 		err := os.copy_file(p, entry.path)
 		if err != nil do fmt.panicf("Failed to copy template: %s to %s :: %v", entry.path, p, err)
-		fmt.printfln("Created: [%s] %s -> %s", entry.type, entry.name, entry.path)
+		fmt.printfln("Created: [%s] %s -> %s", entry.type, epath, entry.path)
 		if exitOnCopy do os.exit(0)
 
 	} else {
 
-		p, perr := os.join_path([]string{paths.cwd, entry.name}, context.allocator)
+		epath: string = templates.override_name != "" ? templates.override_name : entry.name
+		p, perr := os.join_path([]string{paths.cwd, epath}, context.allocator)
 		if perr != nil do fmt.panicf("Could not allocate template destination string: %s", p)
 
 		err := os.copy_directory_all(p, entry.path)
 		if err != nil do fmt.panicf("Failed to copy template: %s to %s :: %v", entry.path, p, err)
-		fmt.printfln("Created: [%s] %s -> %s", entry.type, entry.name, entry.path)
+		fmt.printfln("Created: [%s] %s -> %s", entry.type, epath, entry.path)
 		if exitOnCopy do os.exit(0)
 
 	}

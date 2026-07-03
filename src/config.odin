@@ -2,9 +2,8 @@ package main
 
 import "core:fmt"
 
-Config_Data :: struct {
-	thing: bool,
-}
+
+Config_Data :: struct {}
 
 // Constructor
 Config_Data_Create :: proc() -> ^Config_Data {
