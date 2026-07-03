@@ -76,8 +76,8 @@ Config_Load_File :: proc(c: ^CFile($T)) -> bool {
 	}
 
 	ok := json.unmarshal(data, c.target) == nil
-	if ok {
-		fmt.println("Loaded Config")
-	}
+	// if ok {
+	// 	fmt.println("Loaded Config")
+	// }
 	return ok
 }
