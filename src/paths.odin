@@ -8,6 +8,7 @@ Paths :: struct {
 	home:     string,
 	config:   string,
 	template: string,
+	cwd:      string,
 }
 
 // Paths constructor
@@ -22,6 +23,7 @@ Paths_Delete :: proc(p: ^Paths) {
 	delete_string(p.home)
 	delete_string(p.config)
 	delete_string(p.template)
+	delete_string(p.cwd)
 	free(p)
 }
 
@@ -47,8 +49,14 @@ Paths_Init :: proc() -> ^Paths {
 	defer delete_string(template)
 	if template_err != nil do fmt.panicf("Failed to allocate template path string: %v", template_err)
 
+	cwd, cwd_err := os.get_working_directory(context.allocator)
+	defer delete_string(cwd)
+	if cwd_err != nil do fmt.panicf("Failed to allocate cwd: %v", cwd_err)
+
+
 	p.home = strings.clone(home, context.allocator)
 	p.config = strings.clone(config, context.allocator)
 	p.template = strings.clone(template, context.allocator)
+	p.cwd = strings.clone(cwd, context.allocator)
 	return p
 }
