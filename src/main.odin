@@ -1,23 +1,21 @@
 package main
 
-//TODO:
-// Link some config based system into a custom override, where you give the template name, the target (ie. '{thing}' ) and the new
-// replacement, as a variable or something, that could be either hard coded into the config, or set directly with a argument i.e.
-// omake -n some_project -s thing=hello odin -> to substitute the '{thing}' to 'hello'
-
 import "core:fmt"
 import "core:os"
 import "core:slice"
 
 PrintHelp :: proc() {
 	str := `
-                    [ omake ]
-----------------------------------------------------
+                     [ omake ]
+-----------------------------------------------------
+$CONFIG     - $HOME/.config/omake
 $TEMPLATES  - Defaults to ~/.config/omake/templates
 $NAME       - Refers to the template name, when made
+$K / $V     - Refers to keyword and replacement value
 
 -l | list   - Displays valid names inside $TEMPLATES
 -n | name   - Override template $NAME
+-k | key    - Set keyword value, requires $K and $V
 
 `
 	fmt.print(str)
@@ -33,9 +31,8 @@ main :: proc() {
 	cfile := CFile_Create(Config_Data, paths.config, config, Config_Data{})
 	defer CFile_Delete(cfile)
 
-	// NOTE: Temp removed
-	// Config_File_Create(cfile)
-	// Config_Load_File(cfile)
+	Config_File_Create(cfile)
+	Config_Load_File(cfile)
 
 	templates := Template_Directory_Data_Create()
 	Template_Directory_Init(templates, paths)
@@ -62,10 +59,12 @@ main :: proc() {
 		os.exit(1)
 	}
 
+	selectedKeywords: [dynamic]Config_Keyword
+	defer delete(selectedKeywords)
+
 	args := os.args[1:]
 	al := 0
 	for al < len(args) {
-
 		switch (args[al]) {
 		case "-h", "--help", "help":
 			PrintHelp()
@@ -77,6 +76,22 @@ main :: proc() {
 				fmt.printfln("%s", n)
 			}
 			os.exit(0)
+
+		case "-k", "--key", "key":
+			if al + 2 >= len(args) {
+				fmt.eprintln("Requires a key and value to be provided")
+				os.exit(1)
+			}
+			if !slice.contains(config.custom_keywords[:], args[al + 1]) {
+				fmt.eprintfln(
+					"Invalid keyword provided, you can add keywords via the custom_keywords array: %s",
+					paths.config,
+				)
+				os.exit(1)
+			}
+			fmt.printfln("Added key: %s to be replaced with: %s", args[al + 1], args[al + 2])
+			append(&selectedKeywords, Config_Keyword{key = args[al + 1], value = args[al + 2]})
+			al += 2
 
 		case "-n", "--name", "name":
 			if al + 1 >= len(args) {
@@ -91,9 +106,8 @@ main :: proc() {
 				append(&selectedTemplates, args[al])
 			} else {
 				fmt.eprintf(
-					"Invalid argument: %s\nValid template names:\n%v\n",
+					"Invalid argument: %s\nUse 'omake list' to see valid template names\n",
 					args[al],
-					validNames[:],
 				)
 				os.exit(1)
 			}
@@ -108,7 +122,14 @@ main :: proc() {
 		fmt.eprintln("Expected template name(s) - Use 'omake help' for more information")
 		os.exit(1)
 	case 1:
-		Template_Copy(selectedTemplates[:], templates, paths, selectedTemplates[0], true)
+		Template_Copy(
+			selectedTemplates[:],
+			templates,
+			paths,
+			&selectedKeywords,
+			selectedTemplates[0],
+			true,
+		)
 
 	case:
 		if templates.override_name != "" {
@@ -117,7 +138,7 @@ main :: proc() {
 		}
 
 		for name in selectedTemplates {
-			Template_Copy(selectedTemplates[:], templates, paths, name, false)
+			Template_Copy(selectedTemplates[:], templates, paths, &selectedKeywords, name, false)
 		}
 		os.exit(0)
 	}

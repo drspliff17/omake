@@ -72,37 +72,41 @@ Template_Directory_Init :: proc(t: ^Template_Directory_Data, p: ^Paths) {
 		append(&t.data, e)
 	}
 }
-
 Template_Copy :: proc(
 	selectedTemplates: []string,
 	templates: ^Template_Directory_Data,
 	paths: ^Paths,
+	config_keywords: ^[dynamic]Config_Keyword,
 	name: string,
 	exitOnCopy: bool,
 ) {
 	entry := Get_Template_From_Valid_Name(name, templates)
-	if entry.type == .FILE {
 
-		epath: string = templates.override_name != "" ? templates.override_name : entry.name
-		p, perr := os.join_path([]string{paths.cwd, epath}, context.allocator)
-		if perr != nil do fmt.panicf("Could not allocate template destination string: %s", p)
+	epath: string = templates.override_name != "" ? templates.override_name : entry.name
+	p, perr := os.join_path([]string{paths.cwd, epath}, context.allocator)
+	if perr != nil do fmt.panicf("Could not allocate template destination string: %s", p)
+
+	if entry.type == .FILE {
+		file_data, file_data_changed := ParseTemplate_File(entry, config_keywords)
+		defer delete(file_data)
 
 		err := os.copy_file(p, entry.path)
 		if err != nil do fmt.panicf("Failed to copy template: %s to %s :: %v", entry.path, p, err)
+
 		fmt.printfln("Created: [%s] %s -> %s", entry.type, epath, entry.path)
+
+		if file_data_changed {
+			fmt.printfln("Writing to %s", p)
+			write_err := os.write_entire_file_from_bytes(p, file_data[:])
+			if write_err != nil do fmt.panicf("Failed to write to file: %s :: %v", p, write_err)
+		}
+
 		if exitOnCopy do os.exit(0)
 
 	} else {
+		ProcessDirectory(entry.path, p, templates, config_keywords, false)
+		fmt.printfln("Created directory: %s -> %s", entry.path, p)
 
-		epath: string = templates.override_name != "" ? templates.override_name : entry.name
-		p, perr := os.join_path([]string{paths.cwd, epath}, context.allocator)
-		if perr != nil do fmt.panicf("Could not allocate template destination string: %s", p)
-
-		err := os.copy_directory_all(p, entry.path)
-		if err != nil do fmt.panicf("Failed to copy template: %s to %s :: %v", entry.path, p, err)
-		fmt.printfln("Created: [%s] %s -> %s", entry.type, epath, entry.path)
 		if exitOnCopy do os.exit(0)
-
 	}
-
 }
