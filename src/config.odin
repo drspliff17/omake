@@ -2,6 +2,7 @@ package main
 
 import "core:fmt"
 
+// Created from arguments passed to omake, maps valid Config_Data{custom_keywords} entry to given value
 Config_Keyword :: struct {
 	key:   string,
 	value: string,
