@@ -87,6 +87,11 @@ main :: proc() {
 			if al + 1 < len(args) {
 				switch (args[al + 1]) {
 				case "-k", "--key", "key":
+					if len(config.custom_keywords[:]) == 0 {
+						fmt.eprintfln("No Keywords, you can create some here: %s", paths.config)
+						os.exit(1)
+					}
+
 					fmt.print("Valid Keys\n__________\n")
 					for n in config.custom_keywords[:] {
 						fmt.println(n)
@@ -97,6 +102,7 @@ main :: proc() {
 					os.exit(1)
 				}
 			}
+
 			fmt.print("Valid Names\n___________\n")
 			for n in validTemplateNames {
 				fmt.println(n)
