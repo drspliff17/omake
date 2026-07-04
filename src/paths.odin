@@ -27,13 +27,14 @@ Paths_Delete :: proc(p: ^Paths) {
 	free(p)
 }
 
-// Calls constructor, then inits member fields
+// Calls Paths Constructor, then inits all member fields
 Paths_Init :: proc() -> ^Paths {
 	p := Paths_Create()
 
 	home, home_err := os.user_home_dir(context.allocator)
 	defer delete_string(home)
 	if home_err != nil do fmt.panicf("Failed to allocate user home path string: %v", home_err)
+
 
 	config, config_err := os.join_path(
 		[]string{home, ".config", "omake", "config.json"},
@@ -42,12 +43,14 @@ Paths_Init :: proc() -> ^Paths {
 	defer delete_string(config)
 	if config_err != nil do fmt.panicf("Failed to allocate config path string: %v", config_err)
 
+
 	template, template_err := os.join_path(
 		[]string{home, ".config", "omake", "templates"},
 		context.allocator,
 	)
 	defer delete_string(template)
 	if template_err != nil do fmt.panicf("Failed to allocate template path string: %v", template_err)
+
 
 	cwd, cwd_err := os.get_working_directory(context.allocator)
 	defer delete_string(cwd)
@@ -58,5 +61,6 @@ Paths_Init :: proc() -> ^Paths {
 	p.config = strings.clone(config, context.allocator)
 	p.template = strings.clone(template, context.allocator)
 	p.cwd = strings.clone(cwd, context.allocator)
+
 	return p
 }

@@ -36,6 +36,8 @@ ParseTemplate_File :: proc(
 
 	return new_data, was_sub
 }
+
+
 ProcessDirectory :: proc(
 	in_path: string,
 	out_path: string,

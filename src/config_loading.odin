@@ -10,7 +10,7 @@ CFile :: struct(T: typeid) {
 	target:   ^T,
 }
 
-// Constructor for CFile
+// CFile Constructor
 CFile_Create :: proc($T: typeid, filepath: string, target: ^T, default: T) -> ^CFile(T) {
 	cfile, cfile_err := new(CFile(T))
 	if cfile_err != nil do fmt.panicf("Failed to create CFile: %v", cfile_err)
@@ -22,11 +22,12 @@ CFile_Create :: proc($T: typeid, filepath: string, target: ^T, default: T) -> ^C
 	return cfile
 }
 
+// CFile Destructor
 CFile_Delete :: proc(c: ^CFile) {
 	free(c)
 }
 
-// Returns true if new (values = c.default) is created, bool is false
+// Returns true if new (values = c.default) config file is created, or false if config file already exists
 Config_File_Create :: proc(c: ^CFile($T)) -> bool {
 	if os.exists(c.filepath) {
 		return false
@@ -72,12 +73,10 @@ Config_Load_File :: proc(c: ^CFile($T)) -> bool {
 
 	data, err := os.read_entire_file(c.filepath, context.allocator)
 	if err != nil {
-		panic("Error when attempting to read config file")
+		fmt.panicf("Error when attempting to read config file: %s :: %v", c.filepath, err)
 	}
 
-	ok := json.unmarshal(data, c.target) == nil
-	// if ok {
-	// 	fmt.println("Loaded Config")
-	// }
-	return ok
+	json_err := json.unmarshal(data, c.target)
+	if json_err != nil do fmt.panicf("Failed to unmarshal json: %v", json_err)
+	return true
 }
