@@ -1,1 +1,0 @@
-[{"title":"build","command":"odin build src -out:omake","enabled":true}]
