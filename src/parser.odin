@@ -75,6 +75,9 @@ ProcessDirectory :: proc(
 			write_err := os.write_entire_file_from_bytes(dst, file_data[:])
 			if write_err != nil do fmt.panicf("Failed to write file: %s :: %v", dst, write_err)
 
+			chmod := os.chmod(dst, {.Execute_User, .Write_User, .Read_User})
+			if chmod != nil do fmt.panicf("Failed to chmod")
+
 			fmt.printfln("Processed: %s -> %s (changed=%v)", src, dst, changed)
 		}
 

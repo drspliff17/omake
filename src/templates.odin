@@ -101,6 +101,9 @@ Template_Copy :: proc(
 			if write_err != nil do fmt.panicf("Failed to write to file: %s :: %v", p, write_err)
 		}
 
+		chmod := os.chmod(p, {.Execute_User, .Write_User, .Read_User})
+		if chmod != nil do fmt.panicf("Failed to chmod")
+
 		if exitOnCopy do os.exit(0)
 
 	} else {
