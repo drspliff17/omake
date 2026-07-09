@@ -40,3 +40,19 @@ Would become:
 # ./pointlessScript
 echo "Here is my spoon"
 ```
+
+## Install
+
+### Linux
+
+**[Download the latest release](https://github.com/drspliff17/omake/releases/latest)**
+
+### Other OS
+
+- Requires [Odin](https://odin-lang.org/docs/install/) to build
+
+Clone repo, and build with:
+
+```bash
+odin build src -out:omake
+```
