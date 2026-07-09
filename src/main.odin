@@ -165,7 +165,7 @@ main :: proc() {
 
 	case:
 		if templates.override_name != "" {
-			fmt.printfln("Name override can only be used on individual templates")
+			fmt.printfln("Name override can only be used when creating individual templates")
 			os.exit(1)
 		}
 

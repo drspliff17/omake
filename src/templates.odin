@@ -72,6 +72,8 @@ Template_Directory_Init :: proc(t: ^Template_Directory_Data, p: ^Paths) {
 		append(&t.data, e)
 	}
 }
+
+// Copy Template, and Process/Parse dirs and files
 Template_Copy :: proc(
 	selectedTemplates: []string,
 	templates: ^Template_Directory_Data,

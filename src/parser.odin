@@ -38,6 +38,7 @@ ParseTemplate_File :: proc(
 }
 
 
+// Read contents of in_path, parses each file found, and calls self recursively for any dirs found
 ProcessDirectory :: proc(
 	in_path: string,
 	out_path: string,
@@ -45,12 +46,13 @@ ProcessDirectory :: proc(
 	config_keywords: ^[dynamic]Config_Keyword,
 	exitOnCopy: bool,
 ) {
+
 	entries, err := os.read_all_directory_by_path(in_path, context.allocator)
 	if err != nil do fmt.panicf("Failed to read dir: %s :: %v", in_path, err)
 	defer delete(entries, context.allocator)
 
-	// ensure output directory exists
-	os.make_directory_all(out_path)
+	mkdir_err := os.make_directory_all(out_path)
+	if mkdir_err != nil do fmt.panicf("Failed to create output directory: %v", mkdir_err)
 
 	for entry in entries {
 		src, _ := os.join_path([]string{in_path, entry.name}, context.allocator)
