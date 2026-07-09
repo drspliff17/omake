@@ -2,12 +2,53 @@ package main
 
 import "core:fmt"
 import "core:os"
+import "core:slice"
 import "core:strings"
+
+// Checks all keys found inside template, then looks an existing value, to each key. Returns true if all found keys have a value, else, returns false
+ValidateTemplate_Keys :: proc(
+	entry: ^Template_Entry,
+	config_keywords: ^[dynamic]Config_Keyword,
+	config: ^Config_Data,
+) -> bool {
+
+	data, err := os.read_entire_file_from_path(entry.path, context.allocator)
+	defer delete(data, context.allocator)
+	if err != nil do fmt.panicf("Failed to read data from file: %s :: %v", entry.path, err)
+
+	keywords := make([dynamic]string)
+	defer delete(keywords)
+	for ck in config_keywords do append(&keywords, ck.key)
+
+	missing := make([dynamic]string)
+	defer delete(missing)
+
+	sdata := string(data)
+
+	for key in config.custom_keywords[:] {
+		keyF := strings.concatenate({"{{", key, "}}"}, context.allocator)
+		defer delete_string(keyF, context.allocator)
+		if strings.contains(sdata, keyF) && !slice.contains(keywords[:], key) do append(&missing, key)
+	}
+
+	mcount := len(missing)
+	if mcount == 0 do return true
+
+	fmt.printfln(
+		"[ERROR] Template [%s] has keys that have not been assigned a value (%d). Missing Required Keys: ",
+		entry.name,
+		mcount,
+	)
+
+	for m in missing do fmt.printfln("-\t%s", m)
+	return false
+}
 
 // Parses given template entry, with given array of config keywords, returns the subbed file data in bytes
 ParseTemplate_File :: proc(
 	t: ^Template_Entry,
 	ck: ^[dynamic]Config_Keyword,
+	c: ^Config_Data,
 ) -> (
 	new_data: [dynamic]byte,
 	was_sub: bool,
@@ -44,6 +85,7 @@ ProcessDirectory :: proc(
 	out_path: string,
 	templates: ^Template_Directory_Data,
 	config_keywords: ^[dynamic]Config_Keyword,
+	config: ^Config_Data,
 	exitOnCopy: bool,
 ) {
 
@@ -63,7 +105,7 @@ ProcessDirectory :: proc(
 		#partial switch entry.type {
 
 		case .Directory:
-			ProcessDirectory(src, dst, templates, config_keywords, exitOnCopy)
+			ProcessDirectory(src, dst, templates, config_keywords, config, exitOnCopy)
 
 		case .Regular:
 			t: Template_Entry = {
@@ -71,7 +113,9 @@ ProcessDirectory :: proc(
 				name = entry.name,
 			}
 
-			file_data, changed := ParseTemplate_File(&t, config_keywords)
+			if !ValidateTemplate_Keys(&t, config_keywords, config) do os.exit(1)
+
+			file_data, changed := ParseTemplate_File(&t, config_keywords, config)
 			defer delete(file_data)
 
 			write_err := os.write_entire_file_from_bytes(dst, file_data[:])
@@ -79,8 +123,6 @@ ProcessDirectory :: proc(
 
 			chmod := os.chmod(dst, {.Execute_User, .Write_User, .Read_User})
 			if chmod != nil do fmt.panicf("Failed to chmod")
-
-			fmt.printfln("Processed: %s -> %s (changed=%v)", src, dst, changed)
 		}
 
 		if exitOnCopy do os.exit(0)

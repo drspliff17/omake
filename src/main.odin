@@ -121,7 +121,6 @@ main :: proc() {
 				)
 				os.exit(1)
 			}
-			fmt.printfln("Added key: %s to be replaced with: %s", args[al + 1], args[al + 2])
 			append(&inputKeywords, Config_Keyword{key = args[al + 1], value = args[al + 2]})
 			al += 2
 
@@ -159,6 +158,7 @@ main :: proc() {
 			templates,
 			paths,
 			&inputKeywords,
+			config,
 			inputTemplateNames[0],
 			true,
 		)
@@ -170,7 +170,15 @@ main :: proc() {
 		}
 
 		for name in inputTemplateNames {
-			Template_Copy(inputTemplateNames[:], templates, paths, &inputKeywords, name, false)
+			Template_Copy(
+				inputTemplateNames[:],
+				templates,
+				paths,
+				&inputKeywords,
+				config,
+				name,
+				false,
+			)
 		}
 		os.exit(0)
 	}

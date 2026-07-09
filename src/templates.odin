@@ -19,6 +19,7 @@ Template_Directory_Data :: struct {
 	override_name: string,
 }
 
+// Returns ptr to a Template_Entry, assumes name is valid
 Get_Template_From_Valid_Name :: proc(n: string, t: ^Template_Directory_Data) -> ^Template_Entry {
 	for e in t.data {
 		if e.name == n do return e
@@ -79,6 +80,7 @@ Template_Copy :: proc(
 	templates: ^Template_Directory_Data,
 	paths: ^Paths,
 	config_keywords: ^[dynamic]Config_Keyword,
+	config: ^Config_Data,
 	name: string,
 	exitOnCopy: bool,
 ) {
@@ -89,7 +91,10 @@ Template_Copy :: proc(
 	if perr != nil do fmt.panicf("Could not allocate template destination string: %s", p)
 
 	if entry.type == .FILE {
-		file_data, file_data_changed := ParseTemplate_File(entry, config_keywords)
+
+		if !ValidateTemplate_Keys(entry, config_keywords, config) do os.exit(1)
+
+		file_data, file_data_changed := ParseTemplate_File(entry, config_keywords, config)
 		defer delete(file_data)
 
 		err := os.copy_file(p, entry.path)
@@ -109,7 +114,7 @@ Template_Copy :: proc(
 		if exitOnCopy do os.exit(0)
 
 	} else {
-		ProcessDirectory(entry.path, p, templates, config_keywords, false)
+		ProcessDirectory(entry.path, p, templates, config_keywords, config, false)
 		fmt.printfln("Created directory: %s -> %s", entry.path, p)
 
 		if exitOnCopy do os.exit(0)
