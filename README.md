@@ -56,3 +56,8 @@ Clone repo, and build with:
 ```bash
 odin build src -out:omake
 ```
+
+## Note
+
+This is just for me, really but. Figured id keep the repo public. I do
+intend on refining this at somepoint, but for now, it is what it is :)
