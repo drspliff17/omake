@@ -1,0 +1,12 @@
+[
+  {
+    "title": "b",
+    "command": "exec {{path}}/compile.sh",
+    "enabled": true
+  },
+  {
+    "title": "r",
+    "command": "odin run {{target}}",
+    "enabled": true
+  }
+]
